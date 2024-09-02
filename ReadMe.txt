@@ -1,2 +1,1 @@
-Read me wef;lkAMf;ALKnf
-Updated readme
+Project Name: MediScan
