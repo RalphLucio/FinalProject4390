@@ -1,0 +1,194 @@
+body {
+    background: #222;
+    color: #fff;
+    padding: 0;
+    margin: 0;
+    font-family: -apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; }
+  
+  h1, h2 {
+    font-weight: lighter;
+    text-shadow: 0 0 20px black; }
+  
+  h1 {
+    font-size: 72px;
+    margin-bottom: 20px; }
+  
+  h2 {
+    margin-bottom: 50px; }
+  
+  .main {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column; }
+    .main section {
+      margin: auto 50px; }
+    .main .disclaimer {
+      margin: 30px 20vw;
+      font-size: 12px;
+      font-weight: lighter;
+      color: #aaa; }
+    .main footer {
+      flex: none;
+      text-align: center;
+      font-weight: lighter;
+      color: #fff;
+      overflow: hidden;
+      font-size: 10px; }
+      .main footer a:hover {
+        text-decoration: none; }
+      .main footer img {
+        width: 150px;
+        margin: 10px 0 15px -5px; }
+      .main footer .links {
+        padding: 0 0 20px; }
+        .main footer .links a {
+          color: #aaa;
+          text-decoration: none;
+          margin: 0 5px; }
+          .main footer .links a:hover {
+            color: white; }
+  
+  video {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    opacity: .35; }
+  
+  #input {
+    display: none;  }
+  
+  .buttons {
+    display: flex;
+    justify-content: center; }
+    .buttons label, .buttons a {
+      display: inline-block;
+      padding: 20px;
+      cursor: pointer;
+      align-self: center;
+      vertical-align: middle;
+      box-sizing: border-box;
+      margin: 10px; 
+      border: 3px solid rgb(0, 119, 255); }
+    .buttons label {
+      background: rgb(0, 119, 255);
+      color: black; }
+      .buttons label:hover {
+        background: rgb(90, 167, 255); }
+    .buttons a {
+      border: 0px solid rgb(0, 119, 255);
+      margin-left: 10px;
+      color: rgb(15, 18, 23);
+      text-decoration: none; }
+    .buttons img {
+      width: 15px;
+      margin-right: 10px; }
+
+  .hidden {
+        display: none;  }
+
+  .mainTextNeutral {
+    font-size: 32px;
+  }
+        
+  .mainTextSmall {
+    font-size: 32px;
+    animation: shrink 4s;
+  }
+
+  .mainTextLarge {
+    font-size: 64px;
+    animation: grow 4s;
+  }
+
+  @keyframes grow {
+      0% {
+          font-size: 32px;
+      }
+      100% {
+          font-size: 64px;
+      }
+  }
+
+  @keyframes shrink {
+    0% {
+        font-size: 64px;
+    }
+    100% {
+        font-size: 32px;
+    }
+  }
+
+  .subtext {
+    font-size: 24px;
+    opacity: 0;
+    transition: opacity 1s;
+  }
+
+  .subtextFadeIn {
+    animation: fadeIn 2s forwards;
+  }
+
+  .subtextFadeOut {
+    animation: fadeOut 2s forwards;
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+  }
+
+  @keyframes fadeOut {
+    0% {
+      opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+  }
+
+  .green {
+    color: rgb(94, 255, 69);
+  }
+
+  .progress-circle {
+    width: 220px;
+    height: 220px;
+    background: conic-gradient(
+        #007bff 0% 90%,  /* Blue color fills 57% */
+        #e9ecef 0% 100% /* Light gray for the rest */
+    );
+    border-radius: 50%;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    color: #007bff;
+}
+.progress-circle::before {
+    content: '';
+    width: 180px;
+    height: 180px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 1;
+}
+.progress-circle span {
+    position: relative;
+    z-index: 2;
+    font-weight: bold;
+}
