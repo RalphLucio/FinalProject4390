@@ -24,12 +24,12 @@ export default function Home() {
     <div className="bg-background-100 w-screen h-screen grid grid-cols-1 gap-4 content-between">
       <div></div>
       <div>
-        <div className="flex items-center justify-center">
-          <h1 className="text-text-950 text-2xl">
+        <div className="flex items-center justify-center m-2">
+          <h1 className="text-text-950 text-4xl">
             Medi<span className="font-bold text-accent-500">Scan</span>
           </h1>
         </div>
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center space-x-1">
           <SecondaryButton text={signUp} />
           <AccentButton text={signIn} />
         </div>
