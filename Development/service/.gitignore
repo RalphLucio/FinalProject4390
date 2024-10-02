@@ -35,3 +35,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#my virtual environment. just ignore this.
+D:\Downloads\FinalProject\FinalProject4390\customenv
+customenv
