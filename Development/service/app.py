@@ -70,10 +70,9 @@ def create_app():
       file.save(file_path)
 
       #File hash
-      file_hash = md5checksum(file_path)
-      bucket_name = 'mediscan-images'
-      destination_blob_name = f"{file_hash}.jpg"  #or whatever else
-      file_url = upload_blob(bucket_name, file_path, destination_blob_name)
+      file_hash = md5checksum(file_path)  #name of the file when hashed
+      destination_blob_name = f"{file_hash}.jpg"  #name the file for export
+      file_url = upload_blob(file_hash, destination_blob_name) #upload the file given the source and export name
 
       #Save info to db
       db = get_db()
