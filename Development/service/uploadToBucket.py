@@ -2,7 +2,7 @@ from google.cloud import storage
 
 def upload_blob(source_file, dest_name):
     '''upload an image to the google bucket'''
-    storage_client = storage.Client.from_service_account_json(r'Development\\service\\meditensor-2178cd54ff6e.json') #LEAVE THIS ALONE. Unless it changes.
+    storage_client = storage.Client.from_service_account_json(r'FinalProject4390\Development\service\meditensor-2178cd54ff6e.json') #LEAVE THIS ALONE. Unless it changes.
     bucket = storage_client.get_bucket("mediscan-images") #LEAVE THIS ALONE. Unless it changes.
 
     blob = bucket.blob(dest_name) #What to call it; in the bucket

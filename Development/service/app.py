@@ -10,7 +10,12 @@ from uploadToBucket import *
 from tfServe import *
 
 #Database file
-DATABASE = 'image-database.db'
+#NOTE FOR ME LATER LAPTOP PWD: C:\Users\ryanw\Downloads\Final Project
+#this will solve the Jobey issue
+db_dir = os.path.join(r'FinalProject4390\Development\service', 'databases')
+if not os.path.exists(db_dir):
+  os.makedirs(db_dir)
+DATABASE = os.path.join(db_dir, 'image-database.db')
 
 def get_db():
   """Connect to the database."""
@@ -31,7 +36,7 @@ def create_app():
   CORS(app)
 
   #SETUP FOLDERS
-  UPLOAD_FOLDER = r'Development\service\images\uploads'
+  UPLOAD_FOLDER = r'FinalProject4390\Development\service\images\uploads'
   ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
   app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -68,10 +73,10 @@ def create_app():
   #function to wipe /uploads if anythings there
   def wipe_uploads_folder():
     #wipe anything thats left over in the uploads folder
-    uploadsList = os.listdir(r'Development/service/images/uploads')
+    uploadsList = os.listdir(r'FinalProject4390\Development\service\images\uploads')
     if(len(uploadsList) > 0):
       for item in uploadsList:
-        temp_file_path = os.path.join(r'Development/service/images/uploads', item)
+        temp_file_path = os.path.join(r'FinalProject4390\Development\service\images\uploads', item)
         if os.path.isfile(temp_file_path):
             os.remove(temp_file_path)
     print("Uploads wiped.")
