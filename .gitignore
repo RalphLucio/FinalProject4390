@@ -36,15 +36,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-#my virtual environment. just ignore this.
+#.vscode folder
+.vscode
+
+#custom virtual environment thats not to be uploaded
 D:\Downloads\FinalProject\FinalProject4390\customenv
 customenv
 venv
 
-#.vscode folder
-.vscode
-
 # whatever you do do not upload the json.
 # athey will have free access to our database if you do. Either way its blocked
-D:\Downloads\FinalProject\FinalProject4390\Development\service\meditensor-2178cd54ff6e.json
 meditensor-2178cd54ff6e.json
