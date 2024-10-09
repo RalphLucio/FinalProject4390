@@ -63,10 +63,6 @@
     --accent-800: #a8d3f0;
     --accent-900: #d4e9f7;
     --accent-950: #e9f4fb;
-    
-
-
-    
   }
   .dark {
     --text-50: #f1f2f3;
@@ -128,7 +124,17 @@
     --accent-800: #0f3a57;
     --accent-900: #081d2b;
     --accent-950: #040f16;
-    
+  }
+}
+
+.loader {
+  border-top-color: #3498db;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
