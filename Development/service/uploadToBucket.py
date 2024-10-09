@@ -1,16 +1,18 @@
 from google.cloud import storage
 
-def upload_blob(bucket_name, source_file_name, destination_blob_name):
-    """Uploads a file to the bucket."""
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
+def upload_blob(source_file, dest_name):
+    '''upload an image to the google bucket'''
+    storage_client = storage.Client.from_service_account_json(r'FinalProject4390\Development\service\meditensor-2178cd54ff6e.json') #LEAVE THIS ALONE. Unless it changes.
+    bucket = storage_client.get_bucket("mediscan-images") #LEAVE THIS ALONE. Unless it changes.
 
-    #modified
-    blob.upload_from_filename(source_file_name)
+    blob = bucket.blob(dest_name) #What to call it; in the bucket
+    blob.upload_from_filename(source_file) #Upload 'this' file
+    print(f"UPLOAD_BLOB: File {source_file} has been uploaded to bucket as: \"{dest_name}\".")
+    return f"https://storage.cloud.google.com/mediscan-images/{dest_name}"
 
-    print(f"File {source_file_name} uploaded to {destination_blob_name}.")
-
-    #returning url
-    return f"https://storage.googleapis.com/{bucket_name}/{destination_blob_name}"
-    
+if __name__ == '__main__':
+    pass
+    #you have to hardcode the file here unless you want to make a helper function, import os
+    # file = DIRECTORY/IMAGE.PNG
+    # what_to_call_it = os.path.basename(file)
+    # file_url = upload_blob(file, what_to_call_it)
