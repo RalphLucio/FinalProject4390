@@ -7,10 +7,12 @@ const SkinCancerPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [resultData, setResultData] = useState(null); // State to store the results
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
     setIsSuccess(false); // Reset success state when a new file is selected
+    setResultData(null); // Reset results when a new file is selected
   };
 
   const handleSubmit = async (event) => {
@@ -21,17 +23,30 @@ const SkinCancerPage = () => {
     }
 
     setIsLoading(true);
-
     try {
-      // Simulate file upload
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      console.log(formData);
 
-      // Here you would typically handle the file submission to the backend
-      // For example, using fetch or axios to send a POST request
-      console.log("File submitted:", selectedFile);
+      const response = await fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      // Ensure the response is ok and parse it
+      if (!response.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      const result = await response.json(); // Parse the JSON response
+      console.log("Response Data", result);
+
+      // Set the result data and mark success
+      setResultData(result);
       setIsSuccess(true); // Set success state
     } catch (error) {
       console.error("File upload failed:", error);
+      setIsSuccess(false); // Mark success as false on error
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +98,23 @@ const SkinCancerPage = () => {
               </button>
             )}
           </form>
+
+          {/* Display results if available */}
+          {resultData && (
+            <div className="mt-6 bg-white p-4 rounded-lg shadow-md">
+              <h2 className="text-xl font-bold">Results</h2>
+              <p><strong>Name:</strong> {resultData.name}</p>
+              <p><strong>Cancer Prediction:</strong> {resultData.cancer_pred}</p>
+              <p><strong>Hash:</strong> {resultData.hash}</p>
+              <p><strong>URL:</strong> <a href={resultData.url} target="_blank" rel="noopener noreferrer">{resultData.url}</a></p>
+              <button
+                onClick={() => setResultData(null)} // Reset the results
+                className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+              >
+                Upload Another Image
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <div className="mt-auto mb-9">
