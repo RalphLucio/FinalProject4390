@@ -3,16 +3,15 @@ from flask_cors import CORS  # type: ignore
 from werkzeug.utils import secure_filename
 import sqlite3
 import os
-
-
 from ImageToHash import md5checksum
 from uploadToBucket import *
 from tfServe import *
 
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+SECRET_FOLDER = os.path.join(BASE_DIR, 'secret')
 #Database file
-#NOTE FOR ME LATER LAPTOP PWD: C:\Users\ryanw\Downloads\Final Project
-#this will solve the Jobey issue
-db_dir = os.path.join(r'FinalProject4390\Development\service', 'databases')
+db_dir = os.path.join(BASE_DIR, 'databases')
 if not os.path.exists(db_dir):
   os.makedirs(db_dir)
 DATABASE = os.path.join(db_dir, 'image-database.db')
@@ -36,7 +35,9 @@ def create_app():
   CORS(app)
 
   #SETUP FOLDERS
-  UPLOAD_FOLDER = r'FinalProject4390\Development\service\images\uploads'
+  
+  
+  UPLOAD_FOLDER = os.path.join(BASE_DIR,'images', 'uploads')
   ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
   app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -65,23 +66,37 @@ def create_app():
         return 0
       else:
         print("Hash exists and prediction made. Give them old info...")
+        #WIPE HERE
         return 1
     else:
       print("The hash has no flag as it does not exist...")
       return 0
-    
+  
+
   #function to wipe /uploads if anythings there
   def wipe_uploads_folder():
-    #wipe anything thats left over in the uploads folder
-    uploadsList = os.listdir(r'FinalProject4390\Development\service\images\uploads')
-    if(len(uploadsList) > 0):
-      for item in uploadsList:
-        temp_file_path = os.path.join(r'FinalProject4390\Development\service\images\uploads', item)
-        if os.path.isfile(temp_file_path):
-            os.remove(temp_file_path)
-    print("Uploads wiped.")
-    return
+      # Get the current working directory
+      working_dir = os.getcwd()
 
+      # Construct the full path to the uploads folder dynamically
+      uploads_path = os.path.join(working_dir, 'images', 'uploads')
+
+      try:
+        uploads_list = os.listdir(uploads_path)
+        if len(uploads_list) > 0:
+          for item in uploads_list:
+            temp_file_path = os.path.join(uploads_path, item)
+            if os.path.isfile(temp_file_path):
+              os.remove(temp_file_path)
+            print("Uploads wiped.")
+        else:
+          print("Uploads folder is already empty.")
+      except FileNotFoundError:
+        print(f"Error: The path '{uploads_path}' does not exist.")
+      except Exception as e:
+        print(f"An error occurred: {e}")
+      return
+  
   #CLOSE DATABASE CONNECTION
   @app.teardown_appcontext
   def close_db(exception):
@@ -104,17 +119,26 @@ def create_app():
     db = get_db() #open database
 
     wipe_uploads_folder()
-
+    
     if 'file' not in request.files:
-      return 'No file part' #the post did not yield a file
+      return jsonify({"error": "No file part"}), 400  # Changed to JSON response AND #the post did not yield a file
     file = request.files['file']  #grab the file from the request payload
+    
     if file.filename == '':
-      return 'No selected file' #form was submitted without a file
+      return jsonify({"error": "No selected file"}), 400  # Changed to JSON response AND #form was submitted without a file
     
     if file and allowed_file(file.filename):
+      print("This is the base directory")
+      print(BASE_DIR)
       filename = secure_filename(file.filename) #primitive anti-malicious
       file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename) #give the file path of the newly uploaded file
+      
       file.save(file_path)  #save the info to the server
+
+
+
+
+      
 
       #File hashing
       file_hash = md5checksum(file_path)  #name of the file when hashed
@@ -125,11 +149,20 @@ def create_app():
         if (check_pred_of_hash(db, file_hash) == 1):
           #the hash exists and they already have a prediction, show them old info thats been saved to the database
           name, url, cancer_pred = db.execute("SELECT name, url, cancer_pred FROM images WHERE hash = ?",(file_hash,)).fetchone()
-          return f"Name: {name}, Cancer Prediction: {cancer_pred}, Hash: {file_hash}, URL: {url}"
+
+          #TODO: Convert to JSON and send back to server
+          response_data = {
+            "name": name,
+            "cancer_pred" : cancer_pred,
+            "hash" : file_hash,
+            "url" : url
+          }
+
+          return jsonify(response_data), 200 # returning JSON response with HTTP status of 200 (ok)
 
       #Otherwise uploadto Google Bucket because its NEW NEW!
       call_file_this = f"{file_hash}.jpg"  #name the file for export
-      file_url = upload_blob(file_path, call_file_this)  #upload the file given the source and export name
+      file_url = upload_blob(file_path, call_file_this, SECRET_FOLDER)  #upload the file given the source and export name
       print(file_url)
 
       #Save info to the database
@@ -146,20 +179,30 @@ def create_app():
       print(f"Preparing to predict for image: {file_path}")
       predictions = prepare_and_predict(file_path)
 
-      #delete the image after so it doesnt clog up 'uploads'
+      #delete the image after so it doesn't clog up 'uploads'
       # we have it in the bucket now
-      wipe_uploads_folder()
+      #wipe_uploads_folder()
 
       #we got a successful prediction back, set the flag to show the image got a proper checking :)
       if predictions:
         cancer_pred = predictions[0][1]
         db.execute("UPDATE images SET predicted = 1, cancer_pred = ? WHERE hash = ?", (cancer_pred, file_hash))
         db.commit()
-        return f'File successfully uploaded, stored at URL: {file_url}, Predictions: {predictions}'
+        response_data = {
+            "name": filename,
+            "cancer_pred" : cancer_pred,
+            "hash" : file_hash,
+            "url" : file_url
+          }
+        return jsonify(response_data), 200 # uploading json file
       else:
         #they can requeue
         return 'File uploaded but prediction failed.'
       
+
+      #TODO: attempting to returning Json
+
+
     return 'File type not allowed'
   
   return app
