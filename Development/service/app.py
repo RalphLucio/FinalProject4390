@@ -3,9 +3,16 @@ from flask_cors import CORS  # type: ignore
 from werkzeug.utils import secure_filename
 import sqlite3
 import os
+import torch
+import torchvision.models as models
+import torchvision.transforms as transforms
+from PIL import Image
+from scipy.spatial.distance import cosine
+
 from ImageToHash import md5checksum
 from uploadToBucket import *
 from tfServe import *
+from Bad_Actor import *
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -17,14 +24,14 @@ if not os.path.exists(db_dir):
 DATABASE = os.path.join(db_dir, 'image-database.db')
 
 def get_db():
-  """Connect to the database."""
+  #Connect to the database
   db = getattr(g, '_database', None)  # g is 'global'
   if db is None:
     db = g._database = sqlite3.connect(DATABASE)
   return db
 
 def init_db(app):
-  """Initialize the database schema."""
+  #Initialize the database schema
   db = get_db()
   with app.open_resource('schema.sql', mode='r') as f:
     db.executescript(f.read())
@@ -34,12 +41,33 @@ def create_app():
   app = Flask(__name__)
   CORS(app)
 
-  #SETUP FOLDERS
-  
-  
+  '''=============== SETUP FOLDERS ==============='''
   UPLOAD_FOLDER = os.path.join(BASE_DIR,'images', 'uploads')
   ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
   app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+  REFERENCE_IMAGES_DIR = os.path.join(BASE_DIR, 'images', 'Bad_Actor_Images')
+
+  print(f"Reference images path: {REFERENCE_IMAGES_DIR}")
+
+  '''=============== HELPER FUNCTIONS ==============='''
+
+
+  '''----- BAD ACTOR MODEL -----'''
+  # Load the pre-trained model
+  model = models.resnet50(pretrained=True)  # Use a pre-trained ResNet50 model
+  model.eval()  # Set to evaluation mode
+
+  # Define image transformations
+  transform = transforms.Compose([
+      transforms.Resize((224, 224)),
+      transforms.ToTensor(),
+      transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+  ])
+  
+  # Load reference embeddings
+  reference_embeddings = load_reference_embeddings(REFERENCE_IMAGES_DIR, model, transform)
+  ''' --------------------------- '''
+
 
   #Function to check if image is allowed
   def allowed_file(filename):
@@ -97,6 +125,8 @@ def create_app():
         print(f"An error occurred: {e}")
       return
   
+  '''=============== APP ROUTES / FUNCTIONS ==============='''
+  
   #CLOSE DATABASE CONNECTION
   @app.teardown_appcontext
   def close_db(exception):
@@ -112,13 +142,16 @@ def create_app():
   def upload_form():
     wipe_uploads_folder()
     return render_template('upload.html')
+  
+  '''=============== PRIMARY APP FUNCTION ==============='''
 
   #When you upload a file that has the correct extension
   @app.route('/upload', methods=['POST'])
   def upload_file():
-    db = get_db() #open database
 
-    wipe_uploads_folder()
+    '''=============== PRELIMINARY CHECKS ==============='''
+    db = get_db() #connect and open the database
+    wipe_uploads_folder() #wipe the uploads folder to destroy remnants from previous operations
     
     if 'file' not in request.files:
       return jsonify({"error": "No file part"}), 400  # Changed to JSON response AND #the post did not yield a file
@@ -134,14 +167,7 @@ def create_app():
       file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename) #give the file path of the newly uploaded file
       
       file.save(file_path)  #save the info to the server
-
-
-
-
-      
-
-      #File hashing
-      file_hash = md5checksum(file_path)  #name of the file when hashed
+      file_hash = md5checksum(file_path)  #HASH THE FILE -> name of the file when hashed
 
       #Check if dupes in the database and if they got a prediction back
       if (check_hash_exists(db, file_hash) == 1):
@@ -150,17 +176,16 @@ def create_app():
           #the hash exists and they already have a prediction, show them old info thats been saved to the database
           name, url, cancer_pred = db.execute("SELECT name, url, cancer_pred FROM images WHERE hash = ?",(file_hash,)).fetchone()
 
-          #TODO: Convert to JSON and send back to server
+          #Convert to JSON and send back to server
           response_data = {
             "name": name,
             "cancer_pred" : cancer_pred,
             "hash" : file_hash,
             "url" : url
           }
-
           return jsonify(response_data), 200 # returning JSON response with HTTP status of 200 (ok)
-
-      #Otherwise uploadto Google Bucket because its NEW NEW!
+      
+      #Otherwise upload to Google Bucket because its NEW NEW!
       call_file_this = f"{file_hash}.jpg"  #name the file for export
       file_url = upload_blob(file_path, call_file_this, SECRET_FOLDER)  #upload the file given the source and export name
       print(file_url)
@@ -175,6 +200,36 @@ def create_app():
         db.execute("INSERT INTO images (name, hash, url) VALUES (?, ?, ?)", (filename, file_hash, file_url))
         db.commit()
 
+      '''--------- BAD ACTOR PRE-CHECK --------'''
+      #check an uploaded image
+      uploaded_image_path = os.path.join(UPLOAD_FOLDER, file_path)
+      uploaded_image_tensor = process_image(uploaded_image_path, transform)
+      uploaded_image_embedding = get_embedding(model, uploaded_image_tensor)
+
+      print(f'FILE HASH: {file_hash}')
+
+      #compare the uploaded image to the reference embeddings
+      if compare_embeddings(uploaded_image_embedding, reference_embeddings):
+        print("The uploaded image is relevant.")
+        db.execute("UPDATE images SET relevant = 1 WHERE hash = ?", (file_hash,))
+        db.commit()
+        print('Continuing normal operations')
+      else:
+        print("The uploaded image is not relevant.")
+        db.execute("UPDATE images SET relevant = 0 WHERE hash = ?", (file_hash,))
+        db.commit()
+        print('Halting...Pulling up relevant information...')
+
+        #Convert to JSON and send back to server
+        response_data = {
+          "name": filename,
+          "hash" : file_hash,
+          "relevant" : 0,
+          "url" : file_url
+        }
+        return jsonify(response_data), 200
+      
+      '''=============== POST CHECKS -> NOW NORMAL OPERATION ==============='''
       #Prep and predict
       print(f"Preparing to predict for image: {file_path}")
       predictions = prepare_and_predict(file_path)
