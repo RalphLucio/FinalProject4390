@@ -114,10 +114,11 @@ def create_app():
   def wipe_uploads_folder():
       '''Wipes uploads so we have a clean directory everytime'''
 
-      working_dir = os.getcwd() #Get the current working directory
+      # working_dir = os.getcwd() #Get the current working directory
 
-      # Construct the full path to the uploads folder dynamically
-      uploads_path = os.path.join(working_dir, 'images', 'uploads')
+      # # Construct the full path to the uploads folder dynamically
+      # uploads_path = os.path.join(working_dir, 'images', 'uploads')
+      uploads_path = UPLOAD_FOLDER
 
       try:
         uploads_list = os.listdir(uploads_path)
@@ -194,9 +195,7 @@ def create_app():
         if (check_pred_of_hash(db, file_hash) == 1):
           '''-> the hash exists AND they already have a prediction flag of TRUE
                 show them info of that item, pulled from the DB database  '''
-          
           name, url, cancer_pred = db.execute("SELECT name, url, cancer_pred FROM images WHERE hash = ?",(file_hash,)).fetchone()
-
           #Convert to JSON and send back to server
           response_data = {
             "name": name,
@@ -204,6 +203,7 @@ def create_app():
             "hash" : file_hash,
             "url" : url
           }
+          wipe_uploads_folder()
           return jsonify(response_data), 200 # returning JSON response with HTTP status of 200 (ok)
       
       '''=============== PASSED FILE CHECKS AND PRE-EXISTING DATA CHECKS ==============='''
@@ -250,6 +250,7 @@ def create_app():
           "relevant" : 0,
           "url" : file_url
         }
+        wipe_uploads_folder()
         return jsonify(response_data), 200
       
       '''=============== POST CHECKS -> DOING PREDICTION ON IMAGE ==============='''
@@ -273,12 +274,15 @@ def create_app():
             "hash" : file_hash,
             "url" : file_url
           }
+        wipe_uploads_folder()
         return jsonify(response_data), 200 # uploading json file
       else:
         '''there was an issue and they didn't get a prediction back
            but how we've set up our system, they can resubmit their picture to be predicted again.'''
+        wipe_uploads_folder()
         return 'File uploaded but prediction failed.'
       #TODO: attempting to returning Json
+    wipe_uploads_folder()
     return 'File type not allowed'
   return app
 
