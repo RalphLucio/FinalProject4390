@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Lookup Hash</title>
+    <script>
+        function submitForm(event) {
+            event.preventDefault();
+            const hashValue = document.getElementById('hash').value;
+            
+            fetch('/lookup', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ hash: hashValue })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                alert(JSON.stringify(data));
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Lookup Hash</h1>
+    <form onsubmit="submitForm(event)">
+        <label for="hash">Enter Hash:</label>
+        <input type="text" id="hash" name="hash" required>
+        <input type="submit" value="Lookup">
+    </form>
+</body>
+</html>

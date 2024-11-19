@@ -146,6 +146,7 @@ def create_app():
     if db is not None:
       db.close()
 
+
   with app.app_context():
     '''Create the DB'''
     init_db(app)  #Pass app instance to init_db
@@ -157,7 +158,49 @@ def create_app():
     wipe_uploads_folder()
     return render_template('upload.html')
   
+  @app.route('/lookup_page', methods=['GET'])
+  def lookup_page():
+    return render_template('lookup.html')
   
+  @app.route('/lookup', methods=['POST'])
+  def lookup():
+    #grab the data
+    data = request.get_json(silent=True)
+
+    if data and 'hash' in data:
+      hash_value = data['hash']
+    else:
+      hash_value = request.form.get('hash')
+
+    #if we get nothing then complain
+    if not hash_value:
+      return jsonify({"error": "Hash not provided"}), 400
+
+    #sync to db
+    db = get_db()
+
+    #does the hash provided even exist?
+    check_exists = check_hash_exists(db, hash_value)
+    if not check_exists:
+      return jsonify({"Reply": "Hash does not exist"}), 200
+    
+    #grab the information from the hash
+    row = db.execute(
+      "SELECT name, predicted, relevant, cancer_pred FROM images WHERE hash = ?"
+      ,(hash_value,)).fetchone()
+
+    #respond with the corresponding data
+    if row:
+      response_data = {
+        "name": row[0],   
+        "predicted": row[1],
+        "relevant": row[2],
+        "cancer_pred": row[3]
+      }
+      return jsonify(response_data), 200
+    else:
+      #i dunno there was an error
+      return jsonify({"error": "Unexpected issue retrieving data"}), 500
 
   @app.route('/upload', methods=['POST'])
   def upload_file():
@@ -275,13 +318,13 @@ def create_app():
             "url" : file_url
           }
         wipe_uploads_folder()
-        return jsonify(response_data), 200 # uploading json file
+        return jsonify(response_data), 200 # uploading JSON file
       else:
         '''there was an issue and they didn't get a prediction back
            but how we've set up our system, they can resubmit their picture to be predicted again.'''
         wipe_uploads_folder()
         return 'File uploaded but prediction failed.'
-      #TODO: attempting to returning Json
+      #TO-DO: attempting to returning JSON
     wipe_uploads_folder()
     return 'File type not allowed'
   return app
