@@ -128,3 +128,4 @@ const SkinCancerPage = () => {
 };
 
 export default SkinCancerPage;
+
