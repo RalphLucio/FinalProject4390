@@ -28,7 +28,7 @@ const SkinCancerPage = () => {
       formData.append("file", selectedFile);
       console.log(formData);
 
-      const response = await fetch("http://127.0.0.1:5000/upload", {
+      const response = await fetch("https://8sd395mr-5000.usw3.devtunnels.ms/upload", {
         method: "POST",
         body: formData,
       });
@@ -101,15 +101,15 @@ const SkinCancerPage = () => {
 
           {/* Display results if available */}
           {resultData && (
-            <div className="mt-6 bg-white p-4 rounded-lg shadow-md">
-              <h2 className="text-xl font-bold">Results</h2>
-              <p><strong>Name:</strong> {resultData.name}</p>
-              <p><strong>Cancer Prediction:</strong> {resultData.cancer_pred}</p>
-              <p><strong>Hash:</strong> {resultData.hash}</p>
-              <p><strong>URL:</strong> <a href={resultData.url} target="_blank" rel="noopener noreferrer">{resultData.url}</a></p>
+            <div className="mt-6 p-4 shadow-md">
+              <h2 className="text-xl font-bold text-white">Results</h2>
+              <p className="text-white"><strong>Name:</strong> {resultData.name}</p>
+              <p className="text-white"><strong>Cancer Prediction:</strong> {resultData.cancer_pred}</p>
+              <p className="text-white"><strong>Hash:</strong> {resultData.hash}</p>
+              <p className="text-white"><strong>URL:</strong> <img src={resultData.url} alt="" /></p>
               <button
                 onClick={() => setResultData(null)} // Reset the results
-                className="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700"
+                className="mt-4 bg-red-600 py-2 px-4 rounded-lg hover:bg-red-700"
               >
                 Upload Another Image
               </button>
