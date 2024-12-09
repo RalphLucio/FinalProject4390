@@ -33,7 +33,7 @@ db_dir = os.path.join(BASE_DIR, 'databases')
 if not os.path.exists(db_dir):
   os.makedirs(db_dir) #make the database dir. if it does not exist
 
-DATABASE = os.path.join(db_dir, 'image-database.db')#assumes it already exists, schema will make if it doesnt
+DATABASE = os.path.join(db_dir, 'image-database.db') #assumes it already exists, schema will make if it doesnt
 '''=============== =============== ==============='''
 
 def get_db():
