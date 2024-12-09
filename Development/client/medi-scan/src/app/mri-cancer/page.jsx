@@ -6,11 +6,13 @@ import Footer from "../components/Footer";
 const MriCancerPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [segmentedImage, setSegmentedImage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
-    setIsSuccess(false); // Reset success state when a new file is selected
+    setSegmentedImage(""); // Reset segmented image when a new file is selected
+    setErrorMessage(""); // Clear previous error messages
   };
 
   const handleSubmit = async (event) => {
@@ -22,19 +24,37 @@ const MriCancerPage = () => {
 
     setIsLoading(true);
 
-    try {
-      // Simulate file upload
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64Image = e.target.result.split(",")[1];
+      const payload = { image: base64Image };
 
-      // Handle the file submission to the backend
-      // Using fetch or axios to send a POST request
-      console.log("File submitted:", selectedFile);
-      setIsSuccess(true); // Set success state
-    } catch (error) {
-      console.error("File upload failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
+      try {
+        const response = await fetch("http://127.0.0.1:5000/predict", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        // Display segmented image
+        setSegmentedImage(`data:image/jpeg;base64,${data.segmented_image}`);
+      } catch (error) {
+        console.error("Error:", error);
+        setErrorMessage("Failed to process the image. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    reader.readAsDataURL(selectedFile);
   };
 
   return (
@@ -49,17 +69,15 @@ const MriCancerPage = () => {
           <h1 className="text-3xl font-bold mb-4 text-blue-600 text-center">
             Upload MRI Scan
           </h1>
-          <p className="mb-4 text-white">
-            Please upload a MRI picture. Our cancer detection model will analyze
-            the image to provide you with a preliminary assessment. Ensure the
-            image is of good quality for the best results.
+          <p className="mb-4 text-white text-center">
+            Please upload an MRI image to see the segmented results.
           </p>
-          {isSuccess && (
+          {errorMessage && (
             <div
-              className="alert alert-success text-center mb-4 text-white"
+              className="alert alert-danger text-center mb-4 text-red-500"
               role="alert"
             >
-              File uploaded successfully!
+              {errorMessage}
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -82,6 +100,25 @@ const MriCancerPage = () => {
               </button>
             )}
           </form>
+
+          <div className="mt-6 text-center">
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              Segmented Image
+            </h2>
+            {segmentedImage && (
+              <div className="flex justify-center items-center">
+                <img
+                  src={segmentedImage}
+                  alt="Segmented"
+                  className="border border-gray-300 rounded"
+                  style={{
+                    maxWidth: "100%",
+                    height: "auto",
+                  }}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className="mt-auto mb-9">
